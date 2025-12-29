@@ -15,13 +15,37 @@ const generateRoutes = require('./routes/generate.routes');
 const app = express();
 
 // Security middleware
+app.enable('trust proxy');
 app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-        ? process.env.CLIENT_URL
-        : 'http://localhost:3000',
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'https://ai-ppt-generator-iota.vercel.app',
+            'https://ai-ppt-generator-iota.vercel.app/'
+        ];
+
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            // Check if it matches without trailing slash
+            const originWithoutSlash = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+            if (allowedOrigins.indexOf(originWithoutSlash) !== -1) {
+                return callback(null, true);
+            }
+
+            // For development, allow localhost
+            if (process.env.NODE_ENV !== 'production') {
+                return callback(null, true);
+            }
+
+            return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
 
