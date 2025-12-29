@@ -1,7 +1,8 @@
 class EmailService {
     constructor() {
         if (process.env.BREVO_API_KEY) {
-            console.log('✅ Brevo Email Service initialized');
+            const key = process.env.BREVO_API_KEY;
+            console.log(`✅ Brevo Email Service initialized (Key starts with: ${key.substring(0, 5)}...)`);
         } else {
             console.log('⚠️ BREVO_API_KEY not set. Email service will log to console.');
         }
@@ -28,6 +29,7 @@ class EmailService {
                 headers: {
                     'accept': 'application/json',
                     'api-key': process.env.BREVO_API_KEY,
+                    'x-sib-api-key': process.env.BREVO_API_KEY,
                     'content-type': 'application/json'
                 },
                 body: JSON.stringify({
