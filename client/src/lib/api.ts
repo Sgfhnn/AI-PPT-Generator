@@ -150,6 +150,12 @@ export const authApi = {
 
     verifyEmail: (token: string) =>
         api.post('/auth/verify-email', { token }, { requireAuth: false }),
+
+    forgotPassword: (email: string) =>
+        api.post('/auth/forgot-password', { email }, { requireAuth: false }),
+
+    resetPassword: (data: { token: string; password: string }) =>
+        api.post('/auth/reset-password', data, { requireAuth: false }),
 };
 
 // Presentations API

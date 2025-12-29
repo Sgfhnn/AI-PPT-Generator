@@ -132,7 +132,7 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                        <div className="input-group" style={{ marginBottom: '0.5rem' }}>
                             <label className="input-label" htmlFor="password">
                                 Password
                             </label>
@@ -166,6 +166,12 @@ export default function LoginPage() {
                                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                                 </button>
                             </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right', marginBottom: '1.5rem' }}>
+                            <Link href="/forgot-password" style={{ color: 'var(--accent-primary)', fontSize: '0.875rem', fontWeight: '500' }}>
+                                Forgot password?
+                            </Link>
                         </div>
 
                         <button
