@@ -20,6 +20,7 @@ interface AuthContextType {
     register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => void;
     updateUser: (data: Partial<User>) => void;
+    loginWithToken: (token: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const loginWithToken = async (token: string) => {
+        setIsLoading(true);
+        api.setToken(token);
+        try {
+            await checkAuth();
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -97,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 register,
                 logout,
                 updateUser,
+                loginWithToken,
             }}
         >
             {children}

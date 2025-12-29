@@ -37,8 +37,9 @@ passport.use(new GoogleStrategy({
         user = await User.findOne({ email: profile.emails[0].value });
 
         if (user) {
-            // Link google account
+            // Link google account and mark as verified
             user.googleId = profile.id;
+            user.isVerified = true;
             await user.save();
             return done(null, user);
         }
@@ -85,8 +86,9 @@ passport.use(new GitHubStrategy({
         user = await User.findOne({ email });
 
         if (user) {
-            // Link github account
+            // Link github account and mark as verified
             user.githubId = profile.id;
+            user.isVerified = true;
             await user.save();
             return done(null, user);
         }

@@ -2,25 +2,33 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 
 function AuthCallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { loginWithToken } = useAuth();
 
     useEffect(() => {
         const token = searchParams.get('token');
 
         if (token) {
-            // Save token
-            api.setToken(token);
-            // Redirect to create page
-            router.push('/create');
+            const handleLogin = async () => {
+                try {
+                    await loginWithToken(token);
+                    router.push('/create');
+                } catch (error) {
+                    console.error('OAuth callback error:', error);
+                    router.push('/login?error=oauth_failed');
+                }
+            };
+            handleLogin();
         } else {
             // Failed, go back to login
             router.push('/login?error=oauth_failed');
         }
-    }, [router, searchParams]);
+    }, [router, searchParams, loginWithToken]);
 
     return (
         <div style={{
