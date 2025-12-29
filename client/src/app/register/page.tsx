@@ -39,8 +39,9 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     const passwordRequirements = [
         { met: password.length >= 6, text: 'At least 6 characters' },
@@ -51,6 +52,7 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
 
         if (password !== confirmPassword) {
             setError('Passwords do not match');
@@ -66,7 +68,12 @@ export default function RegisterPage() {
 
         try {
             await register(name, email, password);
-            router.push('/dashboard');
+            setSuccess('Registration successful! Please check your email to verify your account before logging in.');
+            // Clear form
+            setName('');
+            setEmail('');
+            setPassword('');
+            setConfirmPassword('');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Registration failed');
         } finally {
@@ -137,6 +144,20 @@ export default function RegisterPage() {
                             marginBottom: '1.5rem'
                         }}>
                             {error}
+                        </div>
+                    )}
+
+                    {success && (
+                        <div style={{
+                            padding: '0.875rem 1rem',
+                            background: 'rgba(34, 197, 94, 0.1)',
+                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--success)',
+                            fontSize: '0.875rem',
+                            marginBottom: '1.5rem'
+                        }}>
+                            {success}
                         </div>
                     )}
 

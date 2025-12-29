@@ -64,10 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const register = async (name: string, email: string, password: string) => {
         const response = await authApi.register({ name, email, password });
-        if (response.success && response.data) {
-            const data = response.data as { user: User; token: string };
-            api.setToken(data.token);
-            setUser(data.user);
+        if (response.success) {
+            if (response.data && (response.data as { token?: string }).token) {
+                const data = response.data as { user: User; token: string };
+                api.setToken(data.token);
+                setUser(data.user);
+            }
+            // If no token, we don't set user/token, which is correct for mandatory verification
         } else {
             throw new Error(response.message || 'Registration failed');
         }

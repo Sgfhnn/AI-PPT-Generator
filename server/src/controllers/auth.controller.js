@@ -41,12 +41,9 @@ exports.register = async (req, res) => {
             console.error('Failed to send verification email:', err);
         });
 
-        // Generate token
-        const token = user.generateAuthToken();
-
         res.status(201).json({
             success: true,
-            message: 'User registered successfully. Please check your email to verify your account.',
+            message: 'User registered successfully. Please check your email to verify your account before logging in.',
             data: {
                 user: {
                     id: user._id,
@@ -55,8 +52,7 @@ exports.register = async (req, res) => {
                     avatar: user.avatar,
                     isVerified: user.isVerified,
                     createdAt: user.createdAt
-                },
-                token
+                }
             }
         });
     } catch (error) {
@@ -147,6 +143,14 @@ exports.login = async (req, res) => {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
+            });
+        }
+
+        // Check if user is verified
+        if (!user.isVerified) {
+            return res.status(401).json({
+                success: false,
+                message: 'Please verify your email address before logging in. Check your inbox for the verification link.'
             });
         }
 

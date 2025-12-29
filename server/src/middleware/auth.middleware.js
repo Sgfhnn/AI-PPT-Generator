@@ -27,6 +27,14 @@ const auth = async (req, res, next) => {
             });
         }
 
+        // Check if user is verified
+        if (!user.isVerified) {
+            return res.status(401).json({
+                success: false,
+                message: 'Please verify your email address to access this resource.'
+            });
+        }
+
         // Attach user to request
         req.user = user;
         req.token = token;
