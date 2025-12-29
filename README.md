@@ -30,7 +30,7 @@ A full-stack AI-powered presentation generator that transforms text and document
 - pdf-parse (PDF extraction)
 - mammoth (Word document extraction)
 
-```
+
 
 ## 📄 License
 

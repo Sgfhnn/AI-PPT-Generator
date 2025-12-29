@@ -36,13 +36,10 @@ exports.register = async (req, res) => {
 
         await user.save();
 
-        // Send verification email
-        try {
-            await emailService.sendVerificationEmail(user, verificationToken);
-        } catch (err) {
+        // Send verification email (don't await to prevent hanging the response)
+        emailService.sendVerificationEmail(user, verificationToken).catch(err => {
             console.error('Failed to send verification email:', err);
-            // We don't fail registration if email fails, but we should log it
-        }
+        });
 
         // Generate token
         const token = user.generateAuthToken();

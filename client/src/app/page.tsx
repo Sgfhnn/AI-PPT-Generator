@@ -65,6 +65,21 @@ const CheckIcon = () => (
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const MenuIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+
+  const CloseIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+
   const features = [
     {
       icon: <UploadIcon />,
@@ -100,7 +115,7 @@ export default function Home() {
   return (
     <div style={{ minHeight: '100vh' }}>
       {/* Navbar */}
-      <nav style={{
+      <nav className="landing-nav" style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -111,7 +126,7 @@ export default function Home() {
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--border-glass)'
       }}>
-        <div style={{
+        <div className="landing-nav-container" style={{
           maxWidth: '1200px',
           margin: '0 auto',
           display: 'flex',
@@ -132,13 +147,13 @@ export default function Home() {
             }}>
               <SparklesIcon />
             </div>
-            <span className="gradient-text" style={{ fontSize: '1.25rem', fontWeight: '700' }}>
+            <span className="gradient-text landing-logo-text" style={{ fontSize: '1.25rem', fontWeight: '700' }}>
               AI PPT Generator
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="landing-nav-buttons desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <Link href="/login" className="btn btn-ghost">
               Login
             </Link>
@@ -146,7 +161,46 @@ export default function Home() {
               Get Started
             </Link>
           </div>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="mobile-only"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              padding: '0.5rem'
+            }}
+          >
+            {isMenuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
         </div>
+
+        {/* Mobile Menu Content */}
+        {isMenuOpen && (
+          <div className="mobile-only" style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'var(--background-secondary)',
+            borderBottom: '1px solid var(--border-glass)',
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            animation: 'slideDown 0.3s ease'
+          }}>
+            <Link href="/login" className="btn btn-ghost" style={{ justifyContent: 'center' }} onClick={() => setIsMenuOpen(false)}>
+              Login
+            </Link>
+            <Link href="/register" className="btn btn-primary" style={{ justifyContent: 'center' }} onClick={() => setIsMenuOpen(false)}>
+              Get Started
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
