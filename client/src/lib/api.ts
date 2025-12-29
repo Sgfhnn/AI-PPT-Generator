@@ -52,8 +52,13 @@ class ApiClient {
             (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
         }
 
+        // Ensure no double slashes and correct base URL
+        const cleanBaseUrl = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl;
+        const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+        const url = `${cleanBaseUrl}${cleanEndpoint}`;
+
         try {
-            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            const response = await fetch(url, {
                 ...fetchOptions,
                 headers,
             });

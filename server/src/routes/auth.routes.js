@@ -33,14 +33,15 @@ const loginValidation = [
 ];
 
 // Routes
+router.get('/test', (req, res) => res.json({ success: true, message: 'Auth routes are working' }));
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 router.post('/register', registerValidation, authController.register);
 router.post('/verify-email', authController.verifyEmail);
 router.post('/login', loginValidation, authController.login);
 router.get('/me', auth, authController.getMe);
 router.put('/profile', auth, authController.updateProfile);
 router.put('/password', auth, authController.changePassword);
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
 
 // Google OAuth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
