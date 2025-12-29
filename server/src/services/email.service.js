@@ -8,11 +8,17 @@ class EmailService {
     }
 
     async sendVerificationEmail(user, token) {
+        console.log(`📧 Attempting to send verification email to: ${user.email}`);
         const verificationUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
 
         if (!process.env.BREVO_API_KEY) {
-            console.log('📧 [MOCK EMAIL] To:', user.email);
+            console.log('⚠️ BREVO_API_KEY not set. Email service will log to console.');
             console.log('Verification URL:', verificationUrl);
+            return;
+        }
+
+        if (!process.env.SENDER_EMAIL) {
+            console.error('❌ SENDER_EMAIL is not set in environment variables. Brevo requires a verified sender email.');
             return;
         }
 
