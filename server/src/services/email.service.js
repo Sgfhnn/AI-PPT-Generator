@@ -4,16 +4,27 @@ class EmailService {
     constructor() {
         this.transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST || 'smtp.gmail.com',
-            port: process.env.SMTP_PORT || 587,
-            secure: false, // true for 465, false for other ports
+            port: parseInt(process.env.SMTP_PORT) || 587,
+            secure: process.env.SMTP_SECURE === 'true' || false,
             auth: {
                 user: process.env.SMTP_EMAIL,
                 pass: process.env.SMTP_PASSWORD
             },
-            connectionTimeout: 5000, // 5 seconds
-            greetingTimeout: 5000,
-            socketTimeout: 5000
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000
         });
+
+        // Verify connection on startup
+        if (process.env.SMTP_EMAIL) {
+            this.transporter.verify((error, success) => {
+                if (error) {
+                    console.error('❌ SMTP Connection Error:', error.message);
+                } else {
+                    console.log('✅ SMTP Server is ready to take our messages');
+                }
+            });
+        }
     }
 
     async sendVerificationEmail(user, token) {
@@ -34,16 +45,17 @@ class EmailService {
         };
 
         try {
-            if (!process.env.SMTP_EMAIL) {
-                console.log('⚠️ SMTP_EMAIL not set. Skipping email sending.');
+            if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+                console.log('⚠️ SMTP credentials not fully set. Skipping email sending.');
                 console.log('Verification URL:', verificationUrl);
                 return;
             }
-            await this.transporter.sendMail(message);
-            console.log('Verification email sent to:', user.email);
+            const info = await this.transporter.sendMail(message);
+            console.log('📧 Verification email sent successfully:', info.messageId);
         } catch (error) {
-            console.error('Error sending email:', error);
-            throw new Error('Email could not be sent');
+            console.error('❌ Error sending verification email:', error.message);
+            console.error('Full error details:', error);
+            // We don't throw here to prevent breaking the registration flow
         }
     }
 }
