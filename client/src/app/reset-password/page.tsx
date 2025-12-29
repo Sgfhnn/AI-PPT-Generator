@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
@@ -11,7 +11,7 @@ const SparklesIcon = () => (
     </svg>
 );
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
@@ -63,6 +63,92 @@ export default function ResetPasswordPage() {
     };
 
     return (
+        <div className="glass-card" style={{ padding: '2rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                    Reset Password
+                </h1>
+                <p style={{ color: 'var(--text-secondary)' }}>
+                    Enter your new password below
+                </p>
+            </div>
+
+            {error && (
+                <div style={{
+                    padding: '0.875rem 1rem',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--error)',
+                    fontSize: '0.875rem',
+                    marginBottom: '1.5rem'
+                }}>
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div style={{
+                    padding: '0.875rem 1rem',
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--success)',
+                    fontSize: '0.875rem',
+                    marginBottom: '1.5rem'
+                }}>
+                    {success}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+                    <label className="input-label" htmlFor="password">
+                        New Password
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        className="input"
+                        placeholder="Min. 6 characters"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={!token || isLoading}
+                    />
+                </div>
+
+                <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                    <label className="input-label" htmlFor="confirmPassword">
+                        Confirm New Password
+                    </label>
+                    <input
+                        id="confirmPassword"
+                        type="password"
+                        className="input"
+                        placeholder="Repeat new password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        disabled={!token || isLoading}
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ width: '100%' }}
+                    disabled={!token || isLoading}
+                >
+                    {isLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+            </form>
+        </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
         <div style={{
             minHeight: '100vh',
             display: 'flex',
@@ -103,88 +189,14 @@ export default function ResetPasswordPage() {
                     </span>
                 </Link>
 
-                {/* Reset Password Card */}
-                <div className="glass-card" style={{ padding: '2rem' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                        <h1 style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                            Reset Password
-                        </h1>
-                        <p style={{ color: 'var(--text-secondary)' }}>
-                            Enter your new password below
-                        </p>
+                <Suspense fallback={
+                    <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
+                        <div className="spinner" style={{ margin: '0 auto 1rem' }} />
+                        <p style={{ color: 'var(--text-secondary)' }}>Loading reset form...</p>
                     </div>
-
-                    {error && (
-                        <div style={{
-                            padding: '0.875rem 1rem',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: 'var(--radius-md)',
-                            color: 'var(--error)',
-                            fontSize: '0.875rem',
-                            marginBottom: '1.5rem'
-                        }}>
-                            {error}
-                        </div>
-                    )}
-
-                    {success && (
-                        <div style={{
-                            padding: '0.875rem 1rem',
-                            background: 'rgba(34, 197, 94, 0.1)',
-                            border: '1px solid rgba(34, 197, 94, 0.3)',
-                            borderRadius: 'var(--radius-md)',
-                            color: 'var(--success)',
-                            fontSize: '0.875rem',
-                            marginBottom: '1.5rem'
-                        }}>
-                            {success}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit}>
-                        <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-                            <label className="input-label" htmlFor="password">
-                                New Password
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                className="input"
-                                placeholder="Min. 6 characters"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                disabled={!token || isLoading}
-                            />
-                        </div>
-
-                        <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-                            <label className="input-label" htmlFor="confirmPassword">
-                                Confirm New Password
-                            </label>
-                            <input
-                                id="confirmPassword"
-                                type="password"
-                                className="input"
-                                placeholder="Repeat new password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                required
-                                disabled={!token || isLoading}
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            style={{ width: '100%' }}
-                            disabled={!token || isLoading}
-                        >
-                            {isLoading ? 'Resetting...' : 'Reset Password'}
-                        </button>
-                    </form>
-                </div>
+                }>
+                    <ResetPasswordForm />
+                </Suspense>
             </div>
         </div>
     );
