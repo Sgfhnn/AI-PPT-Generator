@@ -1,6 +1,7 @@
 const express = require('express');
 const generateController = require('../controllers/generate.controller');
 const { auth } = require('../middleware/auth.middleware');
+const { pptRateLimitMiddleware } = require('../middleware/rateLimit.middleware');
 const { uploadMiddleware } = require('../middleware/upload.middleware');
 
 const router = express.Router();
@@ -9,10 +10,10 @@ const router = express.Router();
 router.use(auth);
 
 // Generate from text
-router.post('/text', generateController.fromText);
+router.post('/text', pptRateLimitMiddleware, generateController.fromText);
 
 // Generate from file upload
-router.post('/file', uploadMiddleware('file'), generateController.fromFile);
+router.post('/file', pptRateLimitMiddleware, uploadMiddleware('file'), generateController.fromFile);
 
 // Improve existing presentation
 router.post('/:id/improve', generateController.improve);
