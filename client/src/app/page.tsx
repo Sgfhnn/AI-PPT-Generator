@@ -486,7 +486,7 @@ export default function Home() {
         color: 'var(--text-muted)',
         fontSize: '0.875rem'
       }}>
-        <p>© 2024 AI PPT Generator. Built with ❤️ using Next.js</p>
+        <p>© 2026 AI PPT Generator. Built with ❤️ using Next.js</p>
       </footer>
 
       <style jsx>{`
