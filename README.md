@@ -1,37 +1,32 @@
-# 🎯 AI PPT Generator
+# AI PPT Generator
 
-A full-stack AI-powered presentation generator that transforms text and documents into beautiful, professional PowerPoint presentations.
+AI PPT Generator is a full-stack web app that turns raw text or uploaded documents into editable PowerPoint presentations. It combines a Next.js client, an Express API, MongoDB persistence, and Google Gemini for slide generation.
 
-## ✨ Features
+## What It Does
 
-- 📝 **Text Input** - Paste or type your content
-- 📄 **File Upload** - Support for PDF, Word (.docx), and TXT files
-- 🤖 **AI-Powered** - Uses Google Gemini API for intelligent content structuring
-- 🎨 **Beautiful Themes** - Multiple professional dark-mode themes
-- 👤 **User Accounts** - Save and manage your presentations
-- 📥 **Export** - Download as PPTX format
+- Generates presentations from pasted text
+- Extracts content from `.pdf`, `.doc`, `.docx`, and `.txt` uploads
+- Saves presentations per user account
+- Exports generated decks as `.pptx`
+- Supports email verification and password reset flows
+- Includes multiple built-in dark presentation themes
 
-## 🛠️ Tech Stack
+## Stack
 
 ### Frontend
-- Next.js 14 (React)
+- Next.js
+- React
 - TypeScript
 - Tailwind CSS
-- Framer Motion (animations)
 
 ### Backend
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT Authentication
+- Node.js
+- Express
+- MongoDB with Mongoose
+- JWT authentication
 - Google Gemini API
 
-### Libraries
-- PptxGenJS (PowerPoint generation)
-- pdf-parse (PDF extraction)
-- mammoth (Word document extraction)
-
-
-
-## 📄 License
-
-MIT License - feel free to use this project for personal or commercial purposes.
+### Presentation / File Processing
+- PptxGenJS
+- pdf-parse
+- mammoth

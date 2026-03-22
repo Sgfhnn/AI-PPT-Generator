@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { generateApi } from '@/lib/api';
+import { useSearchParams } from 'next/navigation';
+import { generateApi, presentationsApi } from '@/lib/api';
 import FileUpload from '@/components/FileUpload';
 import SlidePreview from '@/components/SlidePreview';
 
@@ -63,7 +63,6 @@ const themes = [
 ];
 
 function CreatePageContent() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const initialMode = searchParams.get('mode') || 'text';
 
@@ -129,27 +128,25 @@ function CreatePageContent() {
 
         setIsExporting(true);
         try {
-            const { presentationsApi } = await import('@/lib/api');
             const response = await presentationsApi.export(generatedPresentation._id);
 
             if (response.success && response.data) {
-                const data = response.data as { downloadUrl: string };
-                // Download the file
                 const downloadUrl = presentationsApi.getDownloadUrl(generatedPresentation._id);
                 const link = document.createElement('a');
                 link.href = downloadUrl;
                 link.download = `${generatedPresentation.title}.pptx`;
                 link.target = '_blank';
 
-                // Add auth token to request
                 const token = localStorage.getItem('token');
                 if (token) {
-                    // Use fetch with auth headers for download
                     const res = await fetch(downloadUrl, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
                     });
+                    if (!res.ok) {
+                        throw new Error('Failed to download presentation file');
+                    }
                     const blob = await res.blob();
                     const url = window.URL.createObjectURL(blob);
                     link.href = url;
@@ -157,6 +154,8 @@ function CreatePageContent() {
                     link.click();
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
+                } else {
+                    throw new Error('You must be logged in to download exported files');
                 }
             }
         } catch (err) {

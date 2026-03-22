@@ -37,39 +37,46 @@ class ApiClient {
         return this.token;
     }
 
+    private buildUrl(endpoint: string) {
+        const cleanBaseUrl = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl;
+        const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+        return `${cleanBaseUrl}${cleanEndpoint}`;
+    }
+
+    private async parseResponse<T>(response: Response): Promise<ApiResponse<T>> {
+        const contentType = response.headers.get('content-type') || '';
+        const isJson = contentType.includes('application/json');
+        const payload = isJson ? await response.json() : null;
+
+        if (!response.ok) {
+            throw new Error(payload?.message || `Request failed with status ${response.status}`);
+        }
+
+        return (payload || { success: true }) as ApiResponse<T>;
+    }
+
     private async request<T>(
         endpoint: string,
         options: FetchOptions = {}
     ): Promise<ApiResponse<T>> {
         const { requireAuth = true, ...fetchOptions } = options;
+        const headers: HeadersInit = { ...options.headers };
 
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        };
+        if (fetchOptions.body && !(fetchOptions.body instanceof FormData)) {
+            (headers as Record<string, string>)['Content-Type'] = 'application/json';
+        }
 
         if (requireAuth && this.token) {
             (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
         }
 
-        // Ensure no double slashes and correct base URL
-        const cleanBaseUrl = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl;
-        const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-        const url = `${cleanBaseUrl}${cleanEndpoint}`;
-
         try {
-            const response = await fetch(url, {
+            const response = await fetch(this.buildUrl(endpoint), {
                 ...fetchOptions,
                 headers,
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Something went wrong');
-            }
-
-            return data;
+            return await this.parseResponse<T>(response);
         } catch (error) {
             if (error instanceof Error) {
                 throw error;
@@ -104,7 +111,6 @@ class ApiClient {
 
     async uploadFile<T>(endpoint: string, formData: FormData, options?: FetchOptions) {
         const { requireAuth = true, ...fetchOptions } = options || {};
-
         const headers: HeadersInit = {};
 
         if (requireAuth && this.token) {
@@ -112,20 +118,14 @@ class ApiClient {
         }
 
         try {
-            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            const response = await fetch(this.buildUrl(endpoint), {
                 ...fetchOptions,
                 method: 'POST',
                 headers,
                 body: formData,
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Upload failed');
-            }
-
-            return data as ApiResponse<T>;
+            return await this.parseResponse<T>(response);
         } catch (error) {
             if (error instanceof Error) {
                 throw error;
@@ -137,7 +137,6 @@ class ApiClient {
 
 export const api = new ApiClient();
 
-// Auth API
 export const authApi = {
     register: (data: { name: string; email: string; password: string }) =>
         api.post('/auth/register', data, { requireAuth: false }),
@@ -163,11 +162,10 @@ export const authApi = {
         api.post('/auth/reset-password', data, { requireAuth: false }),
 };
 
-// Presentations API
 export const presentationsApi = {
     getAll: (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
         const queryString = params
-            ? '?' + new URLSearchParams(params as Record<string, string>).toString()
+            ? `?${new URLSearchParams(params as Record<string, string>).toString()}`
             : '';
         return api.get(`/presentations${queryString}`);
     },
@@ -181,10 +179,9 @@ export const presentationsApi = {
 
     export: (id: string, options?: { enableAnimations: boolean }) => api.post(`/presentations/${id}/export`, options),
 
-    getDownloadUrl: (id: string) => `${API_URL}/presentations/${id}/download`,
+    getDownloadUrl: (id: string) => `${API_URL.replace(/\/$/, '')}/presentations/${id}/download`,
 };
 
-// Generate API
 export const generateApi = {
     fromText: (data: { content: string; title?: string; slideCount?: number; theme?: string }) =>
         api.post('/generate/text', data),

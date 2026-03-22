@@ -3,10 +3,31 @@ const User = require('../models/User.model');
 const geminiService = require('../services/gemini.service');
 const fileService = require('../services/file.service');
 
-// Generate presentation from text
+const ALLOWED_THEMES = new Set([
+    'dark-gradient',
+    'dark-minimal',
+    'dark-corporate',
+    'dark-creative',
+    'dark-tech'
+]);
+
+const getTheme = (theme) => (ALLOWED_THEMES.has(theme) ? theme : 'dark-gradient');
+
+const getSlideCount = (value, maxSlides = 15) => {
+    const parsed = Number.parseInt(value, 10);
+
+    if (Number.isNaN(parsed)) {
+        return 8;
+    }
+
+    return Math.min(Math.max(parsed, 3), maxSlides);
+};
+
 exports.fromText = async (req, res) => {
     try {
-        const { content, title, slideCount = 8, theme = 'dark-gradient' } = req.body;
+        const { content, title } = req.body;
+        const slideCount = getSlideCount(req.body.slideCount);
+        const theme = getTheme(req.body.theme);
 
         if (!content || content.trim().length < 50) {
             return res.status(400).json({
@@ -15,13 +36,11 @@ exports.fromText = async (req, res) => {
             });
         }
 
-        // Generate presentation using Gemini
         const generatedContent = await geminiService.generatePresentationContent(content, {
-            slideCount: parseInt(slideCount),
+            slideCount,
             theme
         });
 
-        // Create presentation in database
         const presentation = new Presentation({
             user: req.user._id,
             title: title || generatedContent.presentationTitle,
@@ -34,7 +53,6 @@ exports.fromText = async (req, res) => {
 
         await presentation.save();
 
-        // Update user's presentation count
         await User.findByIdAndUpdate(req.user._id, {
             $inc: { presentationsCount: 1 }
         });
@@ -54,7 +72,6 @@ exports.fromText = async (req, res) => {
     }
 };
 
-// Generate presentation from file
 exports.fromFile = async (req, res) => {
     try {
         if (!req.file) {
@@ -64,14 +81,14 @@ exports.fromFile = async (req, res) => {
             });
         }
 
-        const { slideCount = 8, theme = 'dark-gradient', title } = req.body;
+        const slideCount = getSlideCount(req.body.slideCount);
+        const theme = getTheme(req.body.theme);
+        const { title } = req.body;
 
-        // Extract text from file
         const extractedData = await fileService.extractText(req.file.path);
         const content = extractedData.text;
 
         if (!content || content.trim().length < 50) {
-            // Clean up uploaded file
             await fileService.deleteFile(req.file.path);
             return res.status(400).json({
                 success: false,
@@ -79,26 +96,22 @@ exports.fromFile = async (req, res) => {
             });
         }
 
-        // Summarize if content is too long (> 10000 chars)
         let processedContent = content;
         if (content.length > 10000) {
             processedContent = await geminiService.summarizeText(content, 2000);
         }
 
-        // Generate presentation using Gemini
         const generatedContent = await geminiService.generatePresentationContent(processedContent, {
-            slideCount: parseInt(slideCount),
+            slideCount,
             theme
         });
 
-        // Determine file type
         const sourceType = fileService.getFileType(req.file.originalname);
 
-        // Create presentation in database
         const presentation = new Presentation({
             user: req.user._id,
             title: title || generatedContent.presentationTitle,
-            originalContent: content.substring(0, 5000), // Store first 5000 chars
+            originalContent: content.substring(0, 5000),
             sourceType,
             slides: generatedContent.slides,
             theme,
@@ -107,12 +120,10 @@ exports.fromFile = async (req, res) => {
 
         await presentation.save();
 
-        // Update user's presentation count
         await User.findByIdAndUpdate(req.user._id, {
             $inc: { presentationsCount: 1 }
         });
 
-        // Clean up uploaded file
         await fileService.deleteFile(req.file.path);
 
         res.status(201).json({
@@ -123,7 +134,6 @@ exports.fromFile = async (req, res) => {
     } catch (error) {
         console.error('Generate from file error:', error);
 
-        // Clean up uploaded file on error
         if (req.file) {
             await fileService.deleteFile(req.file.path);
         }
@@ -136,10 +146,16 @@ exports.fromFile = async (req, res) => {
     }
 };
 
-// Regenerate/improve existing presentation
 exports.improve = async (req, res) => {
     try {
-        const { instruction } = req.body;
+        const instruction = req.body?.instruction?.trim();
+
+        if (!instruction || instruction.length < 10) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide an improvement instruction of at least 10 characters.'
+            });
+        }
 
         const presentation = await Presentation.findOne({
             _id: req.params.id,
@@ -153,16 +169,13 @@ exports.improve = async (req, res) => {
             });
         }
 
-        // Get current slides
         const currentContent = {
             presentationTitle: presentation.title,
             slides: presentation.slides
         };
 
-        // Improve with AI
         const improvedContent = await geminiService.improveContent(currentContent, instruction);
 
-        // Update presentation
         presentation.title = improvedContent.presentationTitle || presentation.title;
         presentation.slides = improvedContent.slides;
         presentation.status = 'generated';
@@ -183,10 +196,10 @@ exports.improve = async (req, res) => {
     }
 };
 
-// Preview generation (without saving)
 exports.preview = async (req, res) => {
     try {
-        const { content, slideCount = 5 } = req.body;
+        const { content } = req.body;
+        const slideCount = getSlideCount(req.body.slideCount, 5);
 
         if (!content || content.trim().length < 50) {
             return res.status(400).json({
@@ -195,9 +208,8 @@ exports.preview = async (req, res) => {
             });
         }
 
-        // Generate preview
         const generatedContent = await geminiService.generatePresentationContent(content, {
-            slideCount: Math.min(parseInt(slideCount), 5) // Limit preview to 5 slides
+            slideCount
         });
 
         res.json({

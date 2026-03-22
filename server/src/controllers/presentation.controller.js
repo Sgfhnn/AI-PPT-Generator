@@ -4,10 +4,11 @@ const pptxService = require('../services/pptx.service');
 const path = require('path');
 const fs = require('fs');
 
-// Get all presentations for current user
 exports.getAll = async (req, res) => {
     try {
-        const { page = 1, limit = 10, status, search } = req.query;
+        const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(50, Math.max(1, Number.parseInt(req.query.limit, 10) || 10));
+        const { status, search } = req.query;
 
         const query = { user: req.user._id };
 
@@ -22,7 +23,7 @@ exports.getAll = async (req, res) => {
         const presentations = await Presentation.find(query)
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
-            .limit(parseInt(limit))
+            .limit(limit)
             .select('-originalContent -slides.notes');
 
         const total = await Presentation.countDocuments(query);
@@ -32,7 +33,7 @@ exports.getAll = async (req, res) => {
             data: {
                 presentations,
                 pagination: {
-                    current: parseInt(page),
+                    current: page,
                     pages: Math.ceil(total / limit),
                     total
                 }
@@ -48,7 +49,6 @@ exports.getAll = async (req, res) => {
     }
 };
 
-// Get single presentation
 exports.getOne = async (req, res) => {
     try {
         const presentation = await Presentation.findOne({
@@ -77,15 +77,17 @@ exports.getOne = async (req, res) => {
     }
 };
 
-// Update presentation
 exports.update = async (req, res) => {
     try {
         const { title, description, slides, theme } = req.body;
-
         const updates = {};
+
         if (title) updates.title = title;
         if (description !== undefined) updates.description = description;
-        if (slides) updates.slides = slides;
+        if (slides) {
+            updates.slides = slides;
+            updates.slideCount = Array.isArray(slides) ? slides.length : 0;
+        }
         if (theme) updates.theme = theme;
 
         const presentation = await Presentation.findOneAndUpdate(
@@ -116,7 +118,6 @@ exports.update = async (req, res) => {
     }
 };
 
-// Delete presentation
 exports.delete = async (req, res) => {
     try {
         const presentation = await Presentation.findOneAndDelete({
@@ -131,7 +132,6 @@ exports.delete = async (req, res) => {
             });
         }
 
-        // Delete associated PPTX file if exists
         if (presentation.generatedPptxUrl) {
             const filePath = path.join(__dirname, '../../uploads/pptx', path.basename(presentation.generatedPptxUrl));
             if (fs.existsSync(filePath)) {
@@ -139,7 +139,6 @@ exports.delete = async (req, res) => {
             }
         }
 
-        // Update user's presentation count
         await User.findByIdAndUpdate(req.user._id, {
             $inc: { presentationsCount: -1 }
         });
@@ -158,7 +157,6 @@ exports.delete = async (req, res) => {
     }
 };
 
-// Export presentation as PPTX
 exports.export = async (req, res) => {
     try {
         const presentation = await Presentation.findOne({
@@ -173,12 +171,10 @@ exports.export = async (req, res) => {
             });
         }
 
-        // Generate PPTX
         const outputDir = path.join(__dirname, '../../uploads/pptx');
         const { enableAnimations } = req.body;
         const result = await pptxService.generatePptx(presentation, outputDir, { enableAnimations });
 
-        // Update presentation with PPTX URL
         presentation.generatedPptxUrl = result.url;
         presentation.status = 'exported';
         await presentation.save();
@@ -201,7 +197,6 @@ exports.export = async (req, res) => {
     }
 };
 
-// Download PPTX file
 exports.download = async (req, res) => {
     try {
         const presentation = await Presentation.findOne({
@@ -226,12 +221,19 @@ exports.download = async (req, res) => {
             });
         }
 
-        // Set headers for download
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
         res.setHeader('Content-Disposition', `attachment; filename="${presentation.title.replace(/[^a-zA-Z0-9]/g, '_')}.pptx"`);
 
-        // Stream the file
         const fileStream = fs.createReadStream(filePath);
+        fileStream.on('error', (streamError) => {
+            console.error('Download stream error:', streamError);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    success: false,
+                    message: 'Failed to stream presentation file'
+                });
+            }
+        });
         fileStream.pipe(res);
     } catch (error) {
         console.error('Download presentation error:', error);
