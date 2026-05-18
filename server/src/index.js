@@ -84,17 +84,23 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-ppt-generator';
 
+const maskedURI = MONGODB_URI.replace(/:([^:@]+)@/, ':******@');
+console.log(`Connecting to MongoDB at: ${maskedURI}`);
+
 mongoose.connect(MONGODB_URI)
     .then(() => {
-        console.log('Connected to MongoDB');
+        console.log('✅ Connected to MongoDB');
         app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-            console.log(`API available at http://localhost:${PORT}/api`);
+            console.log(`✅ Server running on port ${PORT}`);
+            console.log(`👉 API available at http://localhost:${PORT}/api`);
         });
     })
     .catch((err) => {
-        console.error('MongoDB connection error:', err.message);
-        process.exit(1);
+        console.error('❌ MongoDB connection error:', err.stack || err.message || err);
+        // Delay exiting by 2 seconds to give Render logs time to flush stdout/stderr
+        setTimeout(() => {
+            process.exit(1);
+        }, 2000);
     });
 
 module.exports = app;
